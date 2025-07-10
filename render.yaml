@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: mini-url-shortener
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: BASE_URL
+        sync: false 

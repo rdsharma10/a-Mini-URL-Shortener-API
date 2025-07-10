@@ -1,0 +1,444 @@
+{
+  "info": {
+    "name": "Mini URL Shortener API - Complete Test Suite",
+    "description": "Comprehensive test collection for the Mini URL Shortener API with all endpoints, error cases, and assertions",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "✅ Success Tests",
+      "item": [
+        {
+          "name": "POST /shorten - Create Short URL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has shortUrl field\", function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('shortUrl');",
+                  "});",
+                  "",
+                  "pm.test(\"shortUrl contains correct base URL\", function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.shortUrl).to.include('http://localhost:5000/');",
+                  "});",
+                  "",
+                  "pm.test(\"shortUrl has 6-character code\", function () {",
+                  "    const response = pm.response.json();",
+                  "    const code = response.shortUrl.split('/').pop();",
+                  "    pm.expect(code).to.have.lengthOf(6);",
+                  "});",
+                  "",
+                  "// Store the short code for later tests",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    const shortCode = response.shortUrl.split('/').pop();",
+                  "    pm.collectionVariables.set('shortCode', shortCode);",
+                  "    pm.collectionVariables.set('originalUrl', pm.request.body.raw);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://example.com/very/long/link\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shorten",
+              "host": ["{{baseUrl}}"],
+              "path": ["shorten"]
+            },
+            "description": "Creates a short URL and stores the short code for subsequent tests"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /shorten - URL without Protocol",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has shortUrl field\", function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('shortUrl');",
+                  "});",
+                  "",
+                  "pm.test(\"URL was automatically prefixed with https://\", function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.shortUrl).to.include('http://localhost:5000/');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"github.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shorten",
+              "host": ["{{baseUrl}}"],
+              "path": ["shorten"]
+            },
+            "description": "Tests automatic HTTPS protocol addition"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /:code - Redirect to Original URL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 302 (redirect)\", function () {",
+                  "    pm.response.to.have.status(302);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has Location header\", function () {",
+                  "    pm.expect(pm.response.headers.get('Location')).to.exist;",
+                  "});",
+                  "",
+                  "pm.test(\"Location header contains original URL\", function () {",
+                  "    const location = pm.response.headers.get('Location');",
+                  "    pm.expect(location).to.include('example.com');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/{{shortCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["{{shortCode}}"]
+            },
+            "description": "Tests redirection using the short code from the previous test"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /shorten - Duplicate URL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 (not 201)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has shortUrl field\", function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('shortUrl');",
+                  "});",
+                  "",
+                  "pm.test(\"Returns existing short URL for duplicate\", function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.shortUrl).to.include('http://localhost:5000/');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://example.com/very/long/link\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shorten",
+              "host": ["{{baseUrl}}"],
+              "path": ["shorten"]
+            },
+            "description": "Tests that duplicate URLs return existing short URL instead of creating new one"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "❌ Error Tests",
+      "item": [
+        {
+          "name": "POST /shorten - Invalid URL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has error message\", function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('message');",
+                  "});",
+                  "",
+                  "pm.test(\"Error message mentions invalid URL\", function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.include('valid');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"not-a-valid-url\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shorten",
+              "host": ["{{baseUrl}}"],
+              "path": ["shorten"]
+            },
+            "description": "Tests validation with invalid URL format"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /shorten - Missing URL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Response indicates URL is required\", function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response.message).to.include('required');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"otherField\": \"some value\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shorten",
+              "host": ["{{baseUrl}}"],
+              "path": ["shorten"]
+            },
+            "description": "Tests validation when URL field is missing"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /:code - Unknown Short Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has error message\", function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('success', false);",
+                  "    pm.expect(response).to.have.property('message');",
+                  "});",
+                  "",
+                  "pm.test(\"Error message indicates URL not found\", function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.include('not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/invalid-code",
+              "host": ["{{baseUrl}}"],
+              "path": ["invalid-code"]
+            },
+            "description": "Tests 404 response for non-existent short code"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /:code - Malformed Short Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/abc",
+              "host": ["{{baseUrl}}"],
+              "path": ["abc"]
+            },
+            "description": "Tests with short code that's too short (should be 6 characters)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔄 Rate Limiting Tests",
+      "item": [
+        {
+          "name": "Rate Limit Test - Multiple Requests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Response has rate limit headers\", function () {",
+                  "    pm.expect(pm.response.headers.get('RateLimit-Limit')).to.exist;",
+                  "    pm.expect(pm.response.headers.get('RateLimit-Remaining')).to.exist;",
+                  "});",
+                  "",
+                  "pm.test(\"Rate limit is set to 100\", function () {",
+                  "    const limit = pm.response.headers.get('RateLimit-Limit');",
+                  "    pm.expect(parseInt(limit)).to.equal(100);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://test-rate-limit.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shorten",
+              "host": ["{{baseUrl}}"],
+              "path": ["shorten"]
+            },
+            "description": "Tests rate limiting headers (run multiple times to test actual limiting)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📊 Database Verification",
+      "item": [
+        {
+          "name": "Create URL for Database Check",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://database-test.com/unique-url\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shorten",
+              "host": ["{{baseUrl}}"],
+              "path": ["shorten"]
+            },
+            "description": "Creates a URL that can be verified in MongoDB"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "shortCode",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "originalUrl",
+      "value": "",
+      "type": "string"
+    }
+  ]
+} 
